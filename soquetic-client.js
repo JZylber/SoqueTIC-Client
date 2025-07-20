@@ -19,6 +19,12 @@ socket.on("connect_error", () => {
   );
 });
 
+socket.on("disconnect", () => {
+  throw new SoqueticError(
+    "Te desconectaste del backend. Revisá que el servidor esté corriendo sin errores y recargá la página para reconectar."
+  );
+});
+
 const assertConnection = (socket) => {
   if (!socket.active) {
     throw new SoqueticError(
@@ -30,7 +36,7 @@ const assertConnection = (socket) => {
 const assertTypeIsString = (type) => {
   if (typeof type !== "string") {
     throw new SoqueticError(
-      `El tipo de evento debe ser un string, pero es de tipo ${typeof type}`
+      `El nombre del evento debe ser un string, pero es de tipo ${typeof type}`
     );
   }
 };
@@ -55,30 +61,24 @@ const RESTCallbackDecorator = (callback) => {
   };
 };
 
-const send = (type, data, callback = () => {}) => {
+const subscribeRealTimeEvent = (event, callback) => {
   assertConnection(socket);
-  assertTypeIsString(type);
-  socket.emit("realTimeEvent", type, data, RESTCallbackDecorator(callback));
-};
-
-const receive = (type, callback) => {
-  assertConnection(socket);
-  assertTypeIsString(type);
-  socket.on("realTimeEvent", (receivedType, data) => {
-    if (receivedType === type) return callback(data);
+  assertTypeIsString(event);
+  socket.on(`RT:${event}`, (data) => {
+    return callback(data);
   });
 };
 
-const getData = (type, callback) => {
+const getEvent = (event, callback) => {
   assertConnection(socket);
-  assertTypeIsString(type);
-  socket.emit("GETEvent", type, RESTCallbackDecorator(callback));
+  assertTypeIsString(event);
+  socket.emit(`GET:${event}`, RESTCallbackDecorator(callback));
 };
 
-const postData = (type, data, callback = () => {}) => {
+const postEvent = (event, data, callback = () => {}) => {
   assertConnection(socket);
-  assertTypeIsString(type);
-  socket.emit("POSTEvent", type, data, RESTCallbackDecorator(callback));
+  assertTypeIsString(event);
+  socket.emit(`POST:${event}`, data, RESTCallbackDecorator(callback));
 };
 
 const connect2Server = (PORT = 3000) => {
