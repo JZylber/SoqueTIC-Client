@@ -49,6 +49,15 @@ const assertCallbackIsFunction = (callback) => {
   }
 };
 
+const decodeQueryString = (queryString) => {
+  const params = new URLSearchParams(queryString);
+  const decoded = {};
+  for (const [key, value] of params.entries()) {
+    decoded[key] = decodeURIComponent(value);
+  }
+  return decoded;
+};
+
 const RESTCallbackDecorator = (callback) => {
   assertCallbackIsFunction(callback);
   return (response) => {
@@ -72,13 +81,21 @@ const subscribeRealTimeEvent = (event, callback) => {
 const getEvent = (event, callback) => {
   assertConnection(socket);
   assertTypeIsString(event);
-  socket.emit(`GET:${event}`, RESTCallbackDecorator(callback));
+  const [type, ...rest] = event.split("?");
+  const queryString = rest.join("?");
+  const decodedQuery = decodeQueryString(queryString);
+  payload = { query: decodedQuery };
+  socket.emit(`GET:${type}`, payload, RESTCallbackDecorator(callback));
 };
 
 const postEvent = (event, data, callback = () => {}) => {
   assertConnection(socket);
   assertTypeIsString(event);
-  socket.emit(`POST:${event}`, data, RESTCallbackDecorator(callback));
+  const [type, ...rest] = event.split("?");
+  const queryString = rest.join("?");
+  const decodedQuery = decodeQueryString(queryString);
+  payload = { data, query: decodedQuery };
+  socket.emit(`POST:${type}`, payload, RESTCallbackDecorator(callback));
 };
 
 const connect2Server = (PORT = 3000) => {
