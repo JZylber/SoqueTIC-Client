@@ -55,7 +55,7 @@ const decodeQueryString = (queryString) => {
   for (const [key, value] of params.entries()) {
     decoded[key] = decodeURIComponent(value);
   }
-  return decoded;
+  return Object.keys(decoded).length > 0 ? decoded : undefined;
 };
 
 const RESTCallbackDecorator = (callback) => {
